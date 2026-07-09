@@ -146,6 +146,32 @@
   .room-card.active{ border-color:var(--accent); background:var(--accent-dim); }
   .room-card-name{ font-weight:700; font-size:14.5px; }
   .room-card-sub{ font-size:11.5px; color:var(--text-faint); margin-top:2px; }
+  .room-card-stat{ font-size:11px; color:var(--accent); margin-top:4px; font-family:'JetBrains Mono',monospace; }
+  .photo-grid{ column-count:2; column-gap:12px; padding:var(--sp-2) var(--sp-5) var(--sp-6); }
+  @media (min-width: 700px){ .photo-grid{ column-count:3; } }
+  @media (max-width: 480px){ .photo-grid{ column-count:1; } }
+  .photo-card{ break-inside:avoid; margin-bottom:12px; border-radius:var(--radius-md); overflow:hidden; background:var(--surface); border:1px solid var(--border); animation:fadeIn .35s var(--ease); }
+  .photo-card-img{ width:100%; display:block; background:var(--surface-2); }
+  .photo-card-body{ padding:10px 12px; }
+  .photo-card-place{ font-size:12px; font-weight:600; color:var(--accent); margin-bottom:4px; }
+  .photo-card-caption{ font-size:13.5px; color:var(--text); line-height:1.4; margin-bottom:8px; }
+  .photo-card-meta{ display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--text-faint); }
+  .photo-card-skel{ break-inside:avoid; margin-bottom:12px; border-radius:var(--radius-md); height:220px; }
+  .create-photo-preview{ width:100%; max-height:220px; object-fit:cover; border-radius:var(--radius-sm); margin-bottom:12px; display:block; }
+  .unread-dot{ width:7px; height:7px; border-radius:50%; background:var(--danger); display:inline-block; margin-left:5px; vertical-align:middle; }
+  .unread-dot.hidden{ display:none; }
+  .back-link{ display:inline-block; font-size:12.5px; margin-bottom:6px; padding:0; }
+  .explore-room-tag{ display:inline-block; font-size:10.5px; font-weight:700; color:var(--accent); background:var(--accent-dim); padding:2px 9px; border-radius:999px; margin-bottom:6px; cursor:pointer; letter-spacing:.2px; }
+  .activity-row{ display:flex; gap:var(--sp-3); padding:var(--sp-4) var(--sp-5); border-bottom:1px solid var(--border); }
+  .activity-body{ flex:1; font-size:var(--fs-sm); }
+  .activity-preview{ color:var(--text-muted); font-size:12.5px; margin:3px 0; }
+  .profile-stats{ display:flex; gap:var(--sp-5); margin:var(--sp-2) 0 var(--sp-4); }
+  .stat{ display:flex; flex-direction:column; }
+  .stat b{ font-size:var(--fs-lg); font-family:'Fraunces',serif; }
+  .stat span{ font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.5px; }
+  .stat-skel{ width:60px; height:28px; border-radius:6px; display:inline-block; background:linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 37%, var(--surface-2) 63%); background-size:400% 100%; animation:shimmer 1.4s ease infinite; }
+  .create-fab{ background:var(--accent) !important; color:var(--accent-ink) !important; border-radius:50%; width:46px; height:46px; flex:0 0 46px !important; margin:-14px 4px 0; box-shadow:var(--shadow-md); font-size:20px !important; }
+  .create-fab .nav-icon{ font-size:20px; }
   .msg-more{ margin-left:auto; background:none; border:none; color:var(--text-faint); font-size:16px; cursor:pointer; padding:2px 6px; border-radius:6px; }
   .msg-more:hover{ background:var(--surface-2); color:var(--text); }
   .msg-actions{ display:flex; gap:8px; margin-top:6px; }
@@ -285,18 +311,40 @@
   <div class="layout">
     <div class="nav">
       <div class="nav-brand display">Lapse<button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">◐</button></div>
-      <div class="nav-item active" data-view="chat" onclick="setView('chat')"><span class="nav-icon">◐</span><span>Home</span></div>
-      <div class="nav-item" data-view="profile" onclick="setView('profile')"><span class="nav-icon">◍</span><span>Profile</span></div>
-      <div class="nav-item" data-view="settings" onclick="setView('settings')"><span class="nav-icon">⚙</span><span>Settings</span></div>
-      <div class="nav-sep">Rooms</div>
-      <div id="roomList"></div>
+      <div class="nav-item active" data-view="explore" onclick="setView('explore')"><span class="nav-icon">🌍</span><span>Explore</span></div>
+      <div class="nav-item" data-view="rooms" onclick="setView('rooms')"><span class="nav-icon">💬</span><span>Communities</span></div>
+      <div class="nav-item" onclick="openCreateSheet()"><span class="nav-icon">➕</span><span>Create</span></div>
+      <div class="nav-item" data-view="activity" onclick="setView('activity')"><span class="nav-icon">🔔</span><span>Activity<span id="activityDot" class="unread-dot hidden"></span></span></div>
+      <div class="nav-item" data-view="profile" onclick="setView('profile')"><span class="nav-icon">👤</span><span>Profile</span></div>
       <div class="nav-user" id="navUser" onclick="setView('profile')" tabindex="0" role="button" aria-label="Open profile"></div>
     </div>
 
-    <!-- CHAT VIEW -->
-    <div class="center subpage active" id="view-chat">
+    <!-- EXPLORE VIEW — real cross-room activity, no fake content -->
+    <div class="center subpage active" id="view-explore">
       <div class="center-header">
-        <div class="room-title" id="roomTitleBar">World Room</div>
+        <div class="room-title">Explore</div>
+        <div class="room-sub"><span class="live-dot"></span><span>Real travel photos, shared by real people</span></div>
+      </div>
+      <div class="feed" id="exploreFeed" aria-live="polite"></div>
+    </div>
+
+    <!-- ROOMS VIEW — real room list -->
+    <div class="center subpage" id="view-rooms" style="border-right:1px solid var(--border);">
+      <div class="center-header">
+        <div class="room-title">Communities</div>
+        <div class="room-sub">Real people, real conversations, anywhere in the world</div>
+      </div>
+      <div style="padding:var(--sp-4) var(--sp-5) 0;">
+        <input type="text" id="communitySearch" class="field field-plain" placeholder="Search communities..." style="margin-bottom:0;" oninput="renderRoomsGrid()">
+      </div>
+      <div style="padding:var(--sp-4) var(--sp-5);" id="roomsGrid"></div>
+    </div>
+
+    <!-- CHAT VIEW — inside a room, reached from Rooms -->
+    <div class="center subpage" id="view-chat">
+      <div class="center-header">
+        <button class="btn-ghost back-link" onclick="setView('rooms')">← Rooms</button>
+        <div class="room-title" id="roomTitleBar">World Community</div>
         <div class="room-sub"><span class="live-dot"></span><span id="roomSubBar">Live</span><span id="presenceCount" class="presence-count"></span></div>
       </div>
       <div class="composer">
@@ -307,37 +355,49 @@
       <div class="feed" id="feed" aria-live="polite"></div>
     </div>
 
+    <!-- ACTIVITY VIEW — real notifications -->
+    <div class="center subpage" id="view-activity" style="border-right:1px solid var(--border);">
+      <div class="center-header">
+        <div class="room-title">Activity</div>
+        <div class="room-sub">Real reactions and activity on your messages</div>
+      </div>
+      <div class="feed" id="activityFeed" aria-live="polite"></div>
+    </div>
+
     <!-- PROFILE VIEW -->
     <div class="center subpage" id="view-profile" style="border-right:1px solid var(--border);">
-      <h2 class="display">Profile</h2>
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <h2 class="display">Profile</h2>
+        <button class="theme-toggle" onclick="setView('settings')" aria-label="Open settings" title="Settings">⚙</button>
+      </div>
       <div class="subhead">How you appear to everyone in Lapse.</div>
       <div class="profile-avatar-lg" id="profileAvatarLg">?</div>
+      <div class="profile-stats" id="profileStats"></div>
       <div class="field-group"><label for="pfName">Name</label><input class="field field-plain" id="pfName" style="max-width:340px;"></div>
       <div class="field-group"><label for="pfHandle">Handle</label><input class="field field-plain" id="pfHandle" style="max-width:340px;"></div>
+      <div class="field-group"><label for="pfBio">Bio</label><textarea class="field field-plain" id="pfBio" rows="2" style="max-width:340px; resize:vertical;" placeholder="A line about you..." maxlength="140"></textarea></div>
       <div class="field-group">
-        <label>Country</label>
-        <div class="field-group" style="max-width:340px;">
-          <label for="pfCountry">Country</label>
-          <select id="pfCountry" class="field field-plain" style="margin-bottom:0;">
-            <option value="India">India</option>
-            <option value="Nepal">Nepal</option>
-            <option value="Philippines">Philippines</option>
-            <option value="Indonesia">Indonesia</option>
-            <option value="Pakistan">Pakistan</option>
-            <option value="Bangladesh">Bangladesh</option>
-            <option value="Sri Lanka">Sri Lanka</option>
-            <option value="Vietnam">Vietnam</option>
-            <option value="Thailand">Thailand</option>
-            <option value="World">Elsewhere</option>
-          </select>
-        </div>
+        <label for="pfCountry">Country</label>
+        <select id="pfCountry" class="field field-plain" style="max-width:340px; margin-bottom:0;">
+          <option value="India">India</option>
+          <option value="Nepal">Nepal</option>
+          <option value="Philippines">Philippines</option>
+          <option value="Indonesia">Indonesia</option>
+          <option value="Pakistan">Pakistan</option>
+          <option value="Bangladesh">Bangladesh</option>
+          <option value="Sri Lanka">Sri Lanka</option>
+          <option value="Vietnam">Vietnam</option>
+          <option value="Thailand">Thailand</option>
+          <option value="World">Elsewhere</option>
+        </select>
       </div>
       <div class="auth-msg" id="profileMsg" role="alert" style="max-width:340px;"></div>
       <button class="btn btn-primary" style="padding:10px 24px;" onclick="saveProfile()">Save changes</button>
     </div>
 
-    <!-- SETTINGS VIEW -->
+    <!-- SETTINGS VIEW — reached via the gear icon on Profile -->
     <div class="center subpage" id="view-settings" style="border-right:1px solid var(--border);">
+      <button class="btn-ghost back-link" onclick="setView('profile')">← Profile</button>
       <h2 class="display">Settings</h2>
       <div class="subhead">Appearance, account, and session.</div>
       <div class="panel" style="margin-bottom:var(--sp-4);">
@@ -359,24 +419,69 @@
 
     <div class="right">
       <div class="panel">
-        <div class="panel-title">About this room</div>
-        <p id="roomAbout">Messages here are real, stored in your Supabase database, and visible to everyone in this room instantly.</p>
+        <div class="panel-title">About Lapse</div>
+        <p>Everything you see here is real — real people, real messages, real reactions. No fake numbers, ever.</p>
       </div>
     </div>
   </div>
 
   <div class="bottom-nav">
-    <button class="bottom-nav-item active" data-view="chat" onclick="setView('chat')"><span class="nav-icon">◐</span>Home</button>
-    <button class="bottom-nav-item" onclick="openRoomSheet()"><span class="nav-icon">▤</span>Rooms</button>
-    <button class="bottom-nav-item" data-view="profile" onclick="setView('profile')"><span class="nav-icon">◍</span>Profile</button>
-    <button class="bottom-nav-item" data-view="settings" onclick="setView('settings')"><span class="nav-icon">⚙</span>Settings</button>
+    <button class="bottom-nav-item active" data-view="explore" onclick="setView('explore')"><span class="nav-icon">🌍</span>Explore</button>
+    <button class="bottom-nav-item" data-view="rooms" onclick="setView('rooms')"><span class="nav-icon">💬</span>Communities</button>
+    <button class="bottom-nav-item create-fab" onclick="openCreateSheet()"><span class="nav-icon">➕</span></button>
+    <button class="bottom-nav-item" data-view="activity" onclick="setView('activity')"><span class="nav-icon">🔔</span>Activity<span id="activityDotMobile" class="unread-dot hidden"></span></button>
+    <button class="bottom-nav-item" data-view="profile" onclick="setView('profile')"><span class="nav-icon">👤</span>Profile</button>
   </div>
 
-  <div class="room-sheet" id="roomSheet" onclick="if(event.target===this) closeRoomSheet()">
+  <div class="room-sheet" id="createSheet" onclick="if(event.target===this) closeCreateSheet()">
     <div class="room-sheet-inner">
-      <div class="panel-title" style="margin-bottom:14px;">Rooms</div>
-      <div id="sheetRoomList"></div>
-      <button class="btn btn-ghost" style="margin-top:10px;" onclick="closeRoomSheet()">Close</button>
+      <div class="panel-title" style="margin-bottom:14px;">New post</div>
+      <div class="tabs" role="tablist" style="margin-bottom:16px;">
+        <button class="tab active" id="createTabPhoto" role="tab" onclick="setCreateMode('photo')">📸 Travel photo</button>
+        <button class="tab" id="createTabText" role="tab" onclick="setCreateMode('text')">💬 Community post</button>
+      </div>
+
+      <div id="createPhotoFields">
+        <div class="field-group">
+          <label for="createPhotoFile">Photo</label>
+          <input type="file" id="createPhotoFile" accept="image/*" class="field field-plain" style="padding:8px;">
+        </div>
+        <div id="createPhotoPreviewWrap" class="hidden"><img id="createPhotoPreview" class="create-photo-preview"></div>
+        <div class="field-group"><label for="createCaption">Caption</label><textarea id="createCaption" class="field field-plain" rows="2" style="resize:vertical;" placeholder="Where were you, what happened..."></textarea></div>
+        <div class="field-group"><label for="createLocation">Place (optional)</label><input type="text" id="createLocation" class="field field-plain" placeholder="e.g. Pokhara Lakeside"></div>
+        <div class="field-group">
+          <label for="createCountry">Country</label>
+          <select id="createCountry" class="field field-plain" style="margin-bottom:0;">
+            <option value="India">India</option>
+            <option value="Nepal">Nepal</option>
+            <option value="Philippines">Philippines</option>
+            <option value="Indonesia">Indonesia</option>
+            <option value="Pakistan">Pakistan</option>
+            <option value="Bangladesh">Bangladesh</option>
+            <option value="Sri Lanka">Sri Lanka</option>
+            <option value="Vietnam">Vietnam</option>
+            <option value="Thailand">Thailand</option>
+            <option value="World">Elsewhere</option>
+          </select>
+        </div>
+        <div class="auth-msg" id="createPhotoMsg" role="alert"></div>
+        <button class="btn btn-primary btn-block" id="createPhotoBtn" onclick="submitPhotoPost()">Share photo</button>
+      </div>
+
+      <div id="createTextFields" class="hidden">
+        <div class="field-group">
+          <label for="createRoomSelect">Post to</label>
+          <select id="createRoomSelect" class="field field-plain"></select>
+        </div>
+        <div class="field-group">
+          <label for="createText">Message</label>
+          <textarea id="createText" class="field field-plain" rows="3" style="resize:vertical;" placeholder="Say something..."></textarea>
+        </div>
+        <button class="btn btn-primary btn-block" id="createPostBtn" onclick="submitCreate()">Post</button>
+      </div>
+
+      <button class="btn btn-ghost" style="margin-top:10px;" onclick="closeCreateSheet()">Cancel</button>
+      <p style="font-size:11.5px; color:var(--text-faint); margin-top:12px;">Video and story posts are coming later — photo posts and community posts are real, right now.</p>
     </div>
   </div>
 </div>
@@ -577,21 +682,198 @@ function setView(view){
   });
   if(view === 'profile') fillProfileForm();
   if(view === 'settings') document.getElementById('settingsEmail').textContent = session?.user?.email || '—';
+  if(view === 'rooms') renderRoomsGrid();
+  if(view === 'explore') loadExploreFeed();
+  if(view === 'activity') loadActivityFeed();
 }
-function openRoomSheet(){
-  const sheet = document.getElementById('roomSheet');
-  const list = document.getElementById('sheetRoomList');
-  list.innerHTML = Object.entries(ROOMS).map(([id,r])=>`
-    <div class="room-card${id===currentRoom?' active':''}" data-room="${id}">
-      <div><div class="room-card-name">${r.name}</div><div class="room-card-sub">${r.sub}</div></div>
+function renderRoomsGrid(){
+  const grid = document.getElementById('roomsGrid');
+  const q = (document.getElementById('communitySearch')?.value || '').trim().toLowerCase();
+  const entries = Object.entries(ROOMS).filter(([id,r]) => !q || r.name.toLowerCase().includes(q) || (r.sub||'').toLowerCase().includes(q));
+  if(!entries.length){ grid.innerHTML = '<div class="empty-feed">No communities match that search.</div>'; return; }
+  grid.innerHTML = entries.map(([id,r])=>{
+    const stat = (r.members || r.messages)
+      ? `${r.members || 0} ${r.members===1?'person':'people'} · ${r.messages || 0} ${r.messages===1?'message':'messages'}`
+      : 'Be the first to post here';
+    return `
+    <div class="room-card${id===currentRoom?' active':''}" data-room="${id}" style="margin-bottom:12px;">
+      <div><div class="room-card-name">${r.name}</div><div class="room-card-sub">${r.sub}</div><div class="room-card-stat">${stat}</div></div>
       <span class="flag-dot"></span>
-    </div>`).join('');
-  list.querySelectorAll('.room-card').forEach(n=>{
-    n.addEventListener('click', ()=>{ switchRoom(n.dataset.room); closeRoomSheet(); setView('chat'); });
+    </div>`;
+  }).join('');
+  grid.querySelectorAll('.room-card').forEach(n=>{
+    n.addEventListener('click', async ()=>{ await switchRoom(n.dataset.room); setView('chat'); });
   });
-  sheet.classList.add('open');
 }
-function closeRoomSheet(){ document.getElementById('roomSheet').classList.remove('open'); }
+
+/* ---------- Create ---------- */
+function openCreateSheet(){
+  const select = document.getElementById('createRoomSelect');
+  select.innerHTML = Object.entries(ROOMS).map(([id,r])=> `<option value="${id}" ${id===currentRoom?'selected':''}>${r.name}</option>`).join('');
+  document.getElementById('createText').value = '';
+  document.getElementById('createCaption').value = '';
+  document.getElementById('createLocation').value = '';
+  document.getElementById('createPhotoFile').value = '';
+  document.getElementById('createPhotoPreviewWrap').classList.add('hidden');
+  document.getElementById('createPhotoMsg').textContent = '';
+  setCreateMode('photo');
+  document.getElementById('createSheet').classList.add('open');
+}
+function closeCreateSheet(){ document.getElementById('createSheet').classList.remove('open'); }
+function setCreateMode(mode){
+  const isPhoto = mode === 'photo';
+  document.getElementById('createTabPhoto').classList.toggle('active', isPhoto);
+  document.getElementById('createTabText').classList.toggle('active', !isPhoto);
+  document.getElementById('createPhotoFields').classList.toggle('hidden', !isPhoto);
+  document.getElementById('createTextFields').classList.toggle('hidden', isPhoto);
+}
+document.getElementById('createPhotoFile')?.addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  const wrap = document.getElementById('createPhotoPreviewWrap');
+  if(!file){ wrap.classList.add('hidden'); return; }
+  const reader = new FileReader();
+  reader.onload = ()=>{ document.getElementById('createPhotoPreview').src = reader.result; wrap.classList.remove('hidden'); };
+  reader.readAsDataURL(file);
+});
+async function submitPhotoPost(){
+  const file = document.getElementById('createPhotoFile').files[0];
+  const caption = document.getElementById('createCaption').value.trim();
+  const location = document.getElementById('createLocation').value.trim();
+  const country = document.getElementById('createCountry').value;
+  const msg = document.getElementById('createPhotoMsg');
+  msg.className = 'auth-msg'; msg.textContent = '';
+  if(!file){ msg.className='auth-msg err'; msg.textContent='Choose a photo first.'; return; }
+  if(file.size > 8 * 1024 * 1024){ msg.className='auth-msg err'; msg.textContent='Keep photos under 8MB for now.'; return; }
+  const btn = document.getElementById('createPhotoBtn');
+  btn.disabled = true; btn.textContent = 'Uploading...';
+  try{
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = `${session.user.id}/${Date.now()}.${ext}`;
+    const { error: upErr } = await sbClient.storage.from('travel-photos').upload(path, file);
+    if(upErr) throw upErr;
+    const { data: pub } = sbClient.storage.from('travel-photos').getPublicUrl(path);
+    const { error: insErr } = await sbClient.from('posts').insert({
+      user_id: session.user.id, caption, location, country, image_url: pub.publicUrl
+    });
+    if(insErr) throw insErr;
+    closeCreateSheet();
+    toast('Photo shared to Explore.', 'ok');
+    if(document.getElementById('view-explore').classList.contains('active')) loadExploreFeed();
+  }catch(e){
+    msg.className='auth-msg err'; msg.textContent = 'Could not upload — check your connection and try again.';
+  }finally{
+    btn.disabled = false; btn.textContent = 'Share photo';
+  }
+}
+async function submitCreate(){
+  const roomId = document.getElementById('createRoomSelect').value;
+  const text = document.getElementById('createText').value.trim();
+  if(!text) return;
+  const since = Date.now() - lastPostAt;
+  if(since < POST_COOLDOWN_MS){ toast('Sending a bit too fast — wait a moment.', 'err'); return; }
+  const btn = document.getElementById('createPostBtn');
+  btn.disabled = true;
+  try{
+    const { error } = await sbClient.from('messages').insert({ room_id: roomId, user_id: session.user.id, text });
+    if(error) throw error;
+    lastPostAt = Date.now();
+    closeCreateSheet();
+    toast('Posted to ' + ROOMS[roomId].name + '.', 'ok');
+    if(roomId === currentRoom){ /* the room's own realtime subscription will show it if that room is open */ }
+  }catch(e){
+    toast('Could not post. Try again.', 'err');
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+/* ---------- Explore — real cross-room activity, not fake content ---------- */
+async function loadExploreFeed(){
+  const feed = document.getElementById('exploreFeed');
+  feed.innerHTML = '<div class="photo-grid" id="photoGridSkel">' + Array.from({length:6}).map(()=>'<div class="photo-card-skel skel"></div>').join('') + '</div>';
+  try{
+    const { data, error } = await sbClient
+      .from('posts')
+      .select('id, caption, location, country, image_url, created_at, user_id, profiles ( name, handle )')
+      .order('created_at', { ascending: false })
+      .limit(60);
+    if(error) throw error;
+    const visible = (data || []).filter(p => !blockedIds.has(p.user_id));
+    if(!visible.length){
+      feed.innerHTML = `<div class="empty-feed"><div class="big">📸</div>No travel photos yet — be the first to share one.<br><button class="btn btn-primary" style="margin-top:14px; padding:10px 22px;" onclick="openCreateSheet()">Share a photo</button></div>`;
+      return;
+    }
+    feed.innerHTML = '<div class="photo-grid"></div>';
+    const grid = feed.querySelector('.photo-grid');
+    visible.forEach(p => grid.appendChild(photoCardEl(p)));
+  }catch(e){
+    feed.innerHTML = '<div class="empty-feed">Could not load Explore. Check your connection.</div>';
+  }
+}
+function photoCardEl(p){
+  const name = p.profiles ? p.profiles.name : 'Someone';
+  const handle = p.profiles ? p.profiles.handle : 'unknown';
+  const div = document.createElement('div');
+  div.className = 'photo-card';
+  const placeLine = [p.location, p.country].filter(Boolean).join(', ');
+  div.innerHTML = `
+    <img src="${p.image_url}" alt="" loading="lazy" class="photo-card-img">
+    <div class="photo-card-body">
+      ${placeLine ? `<div class="photo-card-place">📍 ${esc(placeLine)}</div>` : ''}
+      ${p.caption ? `<div class="photo-card-caption"></div>` : ''}
+      <div class="photo-card-meta">
+        <div class="avatar" style="width:22px;height:22px;font-size:9px;background:${colorFor(handle)}">${initials(name)}</div>
+        <span>@${esc(handle)}</span>
+        <span class="msg-time">${fmtRelative(p.created_at)}</span>
+      </div>
+    </div>`;
+  if(p.caption) div.querySelector('.photo-card-caption').textContent = p.caption;
+  return div;
+}
+function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+/* ---------- Activity — real notifications, only reactions to your own messages ---------- */
+async function loadActivityFeed(){
+  const feed = document.getElementById('activityFeed');
+  feed.innerHTML = skeletonFeed();
+  try{
+    const { data: myMsgs, error: mErr } = await sbClient.from('messages').select('id, text').eq('user_id', session.user.id);
+    if(mErr) throw mErr;
+    const myIds = (myMsgs || []).map(m=>m.id);
+    if(!myIds.length){ feed.innerHTML = '<div class="empty-feed">No activity yet — post something and come back here to see reactions.</div>'; markActivitySeen(); return; }
+    const { data, error } = await sbClient
+      .from('reactions')
+      .select('message_id, user_id, emoji, created_at, profiles ( name, handle )')
+      .in('message_id', myIds)
+      .neq('user_id', session.user.id)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if(error) throw error;
+    if(!data || !data.length){ feed.innerHTML = '<div class="empty-feed">No activity yet — post something and come back here to see reactions.</div>'; markActivitySeen(); return; }
+    const msgById = {}; (myMsgs||[]).forEach(m=> msgById[m.id]=m.text);
+    feed.innerHTML = data.map(r=>{
+      const name = r.profiles ? r.profiles.name : 'Someone';
+      const handle = r.profiles ? r.profiles.handle : 'unknown';
+      const emoji = REACTION_EMOJI[r.emoji] || '👍';
+      const preview = (msgById[r.message_id] || '').slice(0, 60);
+      return `<div class="activity-row">
+        <div class="avatar" style="background:${colorFor(handle)}">${initials(name)}</div>
+        <div class="activity-body">
+          <div><b>${name}</b> reacted ${emoji} to your message</div>
+          <div class="activity-preview">"${preview.replace(/[<>&]/g, c=>({ '<':'&lt;','>':'&gt;','&':'&amp;' }[c]))}"</div>
+          <div class="msg-time">${fmtRelative(r.created_at)}</div>
+        </div>
+      </div>`;
+    }).join('');
+    markActivitySeen();
+  }catch(e){
+    feed.innerHTML = '<div class="empty-feed">Could not load activity. Check your connection.</div>';
+  }
+}
+function markActivitySeen(){
+  document.getElementById('activityDot')?.classList.add('hidden');
+  document.getElementById('activityDotMobile')?.classList.add('hidden');
+}
 
 /* ---------- app entry ---------- */
 async function loadRooms(){
@@ -599,13 +881,21 @@ async function loadRooms(){
     const { data, error } = await sbClient.from('rooms').select('id, name, description').order('id');
     if(error) throw error;
     ROOMS = {};
-    (data || []).forEach(r => { ROOMS[r.id] = { name: r.name, sub: r.description || 'Live' }; });
-    if(!Object.keys(ROOMS).length){ ROOMS = { world: { name:'World Room', sub:'Open to everyone' } }; }
+    (data || []).forEach(r => { ROOMS[r.id] = { name: r.name, sub: r.description || 'Live', members: 0, messages: 0 }; });
+    if(!Object.keys(ROOMS).length){ ROOMS = { world: { name:'World Community', sub:'Open to everyone', members:0, messages:0 } }; }
   }catch(e){
     console.error('loadRooms failed:', e);
-    ROOMS = { world: { name:'World Room', sub:'Open to everyone' } };
-    toast('Could not load the room list — showing World Room only.', 'err');
+    ROOMS = { world: { name:'World Community', sub:'Open to everyone', members:0, messages:0 } };
+    toast('Could not load the community list — showing World Community only.', 'err');
   }
+  // Real stats — actual member/message counts, no invented numbers.
+  try{
+    const { data: stats, error: sErr } = await sbClient.from('community_stats').select('*');
+    if(sErr) throw sErr;
+    (stats || []).forEach(s=>{
+      if(ROOMS[s.room_id]){ ROOMS[s.room_id].members = s.member_count; ROOMS[s.room_id].messages = s.message_count; }
+    });
+  }catch(e){ /* stats are non-critical — cards still work without them */ }
 }
 async function enterApp(){
   const { data } = await sbClient.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
@@ -615,7 +905,8 @@ async function enterApp(){
   await loadRooms();
   await loadBlocks();
   try{ renderNav(); }catch(e){ console.error('renderNav failed:', e); toast('Something went wrong loading your profile — try refreshing.', 'err'); }
-  await switchRoom(ROOMS.world ? 'world' : Object.keys(ROOMS)[0]);
+  currentRoom = ROOMS.world ? 'world' : Object.keys(ROOMS)[0];
+  setView('explore');
 }
 function renderNav(){
   document.getElementById('navUser').innerHTML = `
@@ -625,10 +916,6 @@ function renderNav(){
   document.querySelector('#navUser span div:last-child').textContent = '@' + profile.handle;
   document.getElementById('composerAvatar').textContent = initials(profile.name);
   document.getElementById('composerAvatar').style.background = colorFor(profile.handle);
-  const list = document.getElementById('roomList');
-  list.innerHTML = Object.entries(ROOMS).map(([id,r])=>`
-    <div class="nav-item nav-room" data-room="${id}" style="font-size:var(--fs-sm);"><span class="flag-dot"></span><span>${r.name}</span></div>`).join('');
-  list.querySelectorAll('.nav-room').forEach(n=> n.addEventListener('click', ()=> switchRoom(n.dataset.room)));
 }
 
 /* ---------- rooms / feed ---------- */
@@ -858,21 +1145,35 @@ async function postMessage(){
 function fillProfileForm(){
   document.getElementById('pfName').value = profile.name;
   document.getElementById('pfHandle').value = profile.handle;
+  document.getElementById('pfBio').value = profile.bio || '';
   document.getElementById('profileAvatarLg').textContent = initials(profile.name);
   document.getElementById('profileAvatarLg').style.background = colorFor(profile.handle);
   document.getElementById('pfCountry').value = profile.country || 'World';
+  loadProfileStats();
+}
+async function loadProfileStats(){
+  const el = document.getElementById('profileStats');
+  el.innerHTML = '<span class="stat-skel"></span>';
+  try{
+    const { count, error } = await sbClient.from('messages').select('id', { count: 'exact', head: true }).eq('user_id', session.user.id);
+    if(error) throw error;
+    el.innerHTML = `<div class="stat"><b>${count ?? 0}</b><span>posts</span></div>`;
+  }catch(e){
+    el.innerHTML = '';
+  }
 }
 async function saveProfile(){
   const name = document.getElementById('pfName').value.trim();
   const handle = document.getElementById('pfHandle').value.trim().toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
   const country = document.getElementById('pfCountry').value;
+  const bio = document.getElementById('pfBio').value.trim().slice(0, 140);
   const msg = document.getElementById('profileMsg');
   msg.className = 'auth-msg'; msg.textContent = '';
   if(!name || handle.length < 3){ msg.className='auth-msg err'; msg.textContent='Name and a handle (3+ characters) are required.'; return; }
   try{
-    const { error } = await sbClient.from('profiles').update({ name, handle, country }).eq('id', session.user.id);
+    const { error } = await sbClient.from('profiles').update({ name, handle, country, bio }).eq('id', session.user.id);
     if(error){ msg.className='auth-msg err'; msg.textContent = error.message.includes('duplicate') ? 'That handle is taken.' : error.message; return; }
-    profile = { ...profile, name, handle, country };
+    profile = { ...profile, name, handle, country, bio };
     renderNav();
     toast('Profile updated.', 'ok');
   }catch(e){
