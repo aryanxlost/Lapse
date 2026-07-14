@@ -161,11 +161,22 @@
   .photo-grid{ column-count:2; column-gap:12px; padding:var(--sp-2) var(--sp-5) var(--sp-6); }
   @media (min-width: 700px){ .photo-grid{ column-count:3; } }
   @media (max-width: 480px){ .photo-grid{ column-count:1; } }
+  .photo-feed{ display:flex; flex-direction:column; gap:16px; padding:var(--sp-2) var(--sp-5) var(--sp-6); max-width:480px; margin:0 auto; }
+  .explore-toolbar{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:0 var(--sp-5) var(--sp-3); }
+  .seg{ display:flex; background:var(--surface-2); border:1px solid var(--border); border-radius:999px; padding:3px; gap:2px; }
+  .seg-btn{ background:none; border:none; color:var(--text-muted); font-size:var(--fs-xs); font-weight:600; padding:6px 12px; border-radius:999px; cursor:pointer; transition:all var(--dur-fast) var(--ease); white-space:nowrap; }
+  .seg-btn.active{ background:var(--accent); color:var(--accent-ink); }
   .photo-card{ break-inside:avoid; margin-bottom:12px; border-radius:var(--radius-md); overflow:hidden; background:var(--surface); border:1px solid color-mix(in srgb, var(--border) 70%, transparent); box-shadow:var(--shadow-sm); animation:fadeIn var(--dur-slow) var(--ease); }
-  .photo-card-img{ width:100%; display:block; background:var(--surface-2); }
+  .photo-feed .photo-card{ margin-bottom:0; }
+  .photo-card-img{ width:100%; display:block; background:var(--surface-2); max-height:420px; object-fit:cover; }
   .photo-card-body{ padding:10px 12px; }
-  .photo-card-place{ font-size:var(--fs-xs); font-weight:600; color:var(--accent); margin-bottom:4px; }
+  .photo-card-place{ font-size:var(--fs-xs); font-weight:600; color:var(--accent); margin-bottom:4px; cursor:pointer; }
   .photo-card-caption{ font-size:var(--fs-sm); color:var(--text); line-height:1.4; margin-bottom:8px; }
+  .photo-card-actions{ display:flex; align-items:center; gap:14px; padding:2px 0 8px; }
+  .pcard-action{ background:none; border:none; font-size:var(--fs-lg); cursor:pointer; display:flex; align-items:center; gap:4px; padding:2px; transition:transform var(--dur-fast) var(--ease-spring); color:var(--text-muted); }
+  .pcard-action:active{ transform:scale(0.85); }
+  .pcard-action.liked, .pcard-action.saved{ color:var(--text); }
+  .pcard-count{ font-size:var(--fs-xs); font-family:'JetBrains Mono',monospace; color:var(--text-muted); }
   .photo-card-meta{ display:flex; align-items:center; gap:6px; font-size:var(--fs-xs); color:var(--text-faint); }
   .photo-card-skel{ break-inside:avoid; margin-bottom:12px; border-radius:var(--radius-md); height:220px; }
   .create-photo-preview{ width:100%; max-height:220px; object-fit:cover; border-radius:var(--radius-sm); margin-bottom:12px; display:block; }
@@ -174,7 +185,6 @@
   .place-chip{ flex-shrink:0; background:var(--surface-2); border:1px solid var(--border); color:var(--text-muted); font-size:var(--fs-xs); padding:7px 14px; border-radius:999px; cursor:pointer; white-space:nowrap; transition:all var(--dur-fast) var(--ease); }
   .place-chip:hover{ border-color:var(--accent); }
   .place-chip.active{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600; }
-  .photo-card-place{ cursor:pointer; }
   .photo-card-place:hover{ text-decoration:underline; }
   .nav-icon svg{ width:19px; height:19px; display:block; }
   .bottom-nav-item .nav-icon svg{ width:21px; height:21px; }
@@ -500,12 +510,13 @@
 
   <div class="room-sheet" id="createSheet" onclick="if(event.target===this) closeCreateSheet()">
     <div class="room-sheet-inner">
-      <div class="panel-title" style="margin-bottom:14px;">Share a travel photo</div>
+      <div class="panel-title" style="margin-bottom:14px;">Share a moment</div>
       <div class="field-group">
-        <label for="createPhotoFile">Photo</label>
-        <input type="file" id="createPhotoFile" accept="image/*" class="field field-plain" style="padding:8px;">
+        <label for="createPhotoFile">Photo or video</label>
+        <input type="file" id="createPhotoFile" accept="image/*,video/*" class="field field-plain" style="padding:8px;">
       </div>
       <div id="createPhotoPreviewWrap" class="hidden"><img id="createPhotoPreview" class="create-photo-preview"></div>
+      <div id="createVideoPreviewWrap" class="hidden"><video id="createVideoPreview" class="create-photo-preview" controls></video></div>
       <div class="field-group"><label for="createCaption">Caption</label><textarea id="createCaption" class="field field-plain" rows="2" style="resize:vertical;" placeholder="Where were you, what happened..."></textarea></div>
       <div class="field-group"><label for="createLocation">Place (optional)</label><input type="text" id="createLocation" class="field field-plain" placeholder="e.g. Pokhara Lakeside"></div>
       <div class="field-group">
@@ -524,7 +535,7 @@
         </select>
       </div>
       <div class="auth-msg" id="createPhotoMsg" role="alert"></div>
-      <button class="btn btn-primary btn-block" id="createPhotoBtn" onclick="submitPhotoPost()">Share photo</button>
+      <button class="btn btn-primary btn-block" id="createPhotoBtn" onclick="submitPhotoPost()">Share</button>
 
       <button class="btn btn-ghost" style="margin-top:10px;" onclick="closeCreateSheet()">Cancel</button>
       <p style="font-size:11.5px; color:var(--text-faint); margin-top:12px;">Video and story posts are coming later.</p>
@@ -734,17 +745,27 @@ function openCreateSheet(){
   document.getElementById('createLocation').value = '';
   document.getElementById('createPhotoFile').value = '';
   document.getElementById('createPhotoPreviewWrap').classList.add('hidden');
+  document.getElementById('createVideoPreviewWrap').classList.add('hidden');
   document.getElementById('createPhotoMsg').textContent = '';
   document.getElementById('createSheet').classList.add('open');
 }
 function closeCreateSheet(){ document.getElementById('createSheet').classList.remove('open'); }
 document.getElementById('createPhotoFile')?.addEventListener('change', (e)=>{
   const file = e.target.files[0];
-  const wrap = document.getElementById('createPhotoPreviewWrap');
-  if(!file){ wrap.classList.add('hidden'); return; }
-  const reader = new FileReader();
-  reader.onload = ()=>{ document.getElementById('createPhotoPreview').src = reader.result; wrap.classList.remove('hidden'); };
-  reader.readAsDataURL(file);
+  const photoWrap = document.getElementById('createPhotoPreviewWrap');
+  const videoWrap = document.getElementById('createVideoPreviewWrap');
+  photoWrap.classList.add('hidden');
+  videoWrap.classList.add('hidden');
+  if(!file) return;
+  const isVideo = file.type.startsWith('video/');
+  const url = URL.createObjectURL(file);
+  if(isVideo){
+    document.getElementById('createVideoPreview').src = url;
+    videoWrap.classList.remove('hidden');
+  }else{
+    document.getElementById('createPhotoPreview').src = url;
+    photoWrap.classList.remove('hidden');
+  }
 });
 async function submitPhotoPost(){
   const file = document.getElementById('createPhotoFile').files[0];
@@ -753,53 +774,75 @@ async function submitPhotoPost(){
   const country = document.getElementById('createCountry').value;
   const msg = document.getElementById('createPhotoMsg');
   msg.className = 'auth-msg'; msg.textContent = '';
-  if(!file){ msg.className='auth-msg err'; msg.textContent='Choose a photo first.'; return; }
-  if(file.size > 8 * 1024 * 1024){ msg.className='auth-msg err'; msg.textContent='Keep photos under 8MB for now.'; return; }
+  if(!file){ msg.className='auth-msg err'; msg.textContent='Choose a photo or video first.'; return; }
+  const isVideo = file.type.startsWith('video/');
+  const maxSize = isVideo ? 20 * 1024 * 1024 : 8 * 1024 * 1024;
+  if(file.size > maxSize){ msg.className='auth-msg err'; msg.textContent = `Keep ${isVideo ? 'videos under 20MB' : 'photos under 8MB'} for now.`; return; }
   const btn = document.getElementById('createPhotoBtn');
   btn.disabled = true; btn.textContent = 'Uploading...';
   try{
-    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const ext = (file.name.split('.').pop() || (isVideo ? 'mp4' : 'jpg')).toLowerCase();
     const path = `${session.user.id}/${Date.now()}.${ext}`;
     const { error: upErr } = await sbClient.storage.from('travel-photos').upload(path, file);
     if(upErr) throw upErr;
     const { data: pub } = sbClient.storage.from('travel-photos').getPublicUrl(path);
     const { error: insErr } = await sbClient.from('posts').insert({
-      user_id: session.user.id, caption, location, country, image_url: pub.publicUrl
+      user_id: session.user.id, caption, location, country, image_url: pub.publicUrl, media_type: isVideo ? 'video' : 'photo'
     });
     if(insErr) throw insErr;
     closeCreateSheet();
-    toast('Photo shared to Explore.', 'ok');
+    toast((isVideo ? 'Video' : 'Photo') + ' shared to Explore.', 'ok');
     if(document.getElementById('view-explore').classList.contains('active')) loadExploreFeed();
   }catch(e){
     msg.className='auth-msg err'; msg.textContent = 'Could not upload — check your connection and try again.';
   }finally{
-    btn.disabled = false; btn.textContent = 'Share photo';
+    btn.disabled = false; btn.textContent = 'Share';
   }
 }
 
 /* ---------- Explore — real travel photos, not fake content ---------- */
 let exploreAllPosts = [];
 let exploreLocationFilter = null;
+let exploreSort = 'recent'; // 'recent' | 'trending' — trending = real like counts, never fake
+let exploreLayout = 'grid'; // 'grid' | 'feed'
+let likeCounts = {};   // postId -> real count
+let likedByMe = new Set(); // postIds I've liked
+let savedByMe = new Set(); // postIds I've saved
+
 async function loadExploreFeed(){
   const feed = document.getElementById('exploreFeed');
   feed.innerHTML = '<div class="photo-grid" id="photoGridSkel">' + Array.from({length:6}).map(()=>'<div class="photo-card-skel skel"></div>').join('') + '</div>';
   try{
     const { data, error } = await sbClient
       .from('posts')
-      .select('id, caption, location, country, image_url, created_at, user_id, profiles ( name, handle )')
+      .select('id, caption, location, country, image_url, media_type, created_at, user_id, profiles ( name, handle )')
       .order('created_at', { ascending: false })
       .limit(60);
     if(error) throw error;
     exploreAllPosts = (data || []).filter(p => !blockedIds.has(p.user_id));
+    await loadLikeAndSaveState(exploreAllPosts.map(p=>p.id));
     renderExploreFeed();
   }catch(e){
     feed.innerHTML = '<div class="empty-feed">Could not load Explore. Check your connection.</div>';
   }
 }
+async function loadLikeAndSaveState(postIds){
+  likeCounts = {}; likedByMe = new Set(); savedByMe = new Set();
+  if(!postIds.length) return;
+  try{
+    const { data: likes } = await sbClient.from('post_likes').select('post_id, user_id').in('post_id', postIds);
+    (likes||[]).forEach(l=>{
+      likeCounts[l.post_id] = (likeCounts[l.post_id]||0) + 1;
+      if(l.user_id === session.user.id) likedByMe.add(l.post_id);
+    });
+    const { data: saves } = await sbClient.from('saved_posts').select('post_id').eq('user_id', session.user.id).in('post_id', postIds);
+    (saves||[]).forEach(s=> savedByMe.add(s.post_id));
+  }catch(e){ /* likes/saves are non-critical — posts still show without them */ }
+}
 function renderExploreFeed(){
   const feed = document.getElementById('exploreFeed');
   if(!exploreAllPosts.length){
-    feed.innerHTML = `<div class="empty-feed"><div class="big">📸</div>No travel photos yet — be the first to share one.<br><button class="btn btn-primary" style="margin-top:14px; padding:10px 22px;" onclick="openCreateSheet()">Share a photo</button></div>`;
+    feed.innerHTML = `<div class="empty-feed"><div class="big">📸</div>No posts yet — be the first to share one.<br><button class="btn btn-primary" style="margin-top:14px; padding:10px 22px;" onclick="openCreateSheet()">Share something</button></div>`;
     return;
   }
   // Real chips — only places that actually have posts, no invented categories.
@@ -809,34 +852,66 @@ function renderExploreFeed(){
     ${places.map(pl => `<button class="place-chip${exploreLocationFilter===pl?' active':''}" onclick="setExploreFilter('${pl.replace(/'/g,"\\'")}')">📍 ${esc(pl)}</button>`).join('')}
   </div>` : '';
 
-  const filtered = exploreLocationFilter
-    ? exploreAllPosts.filter(p => (p.location === exploreLocationFilter) || (p.country === exploreLocationFilter))
-    : exploreAllPosts;
+  const toolbarHtml = `<div class="explore-toolbar">
+    <div class="seg">
+      <button class="seg-btn${exploreSort==='recent'?' active':''}" onclick="setExploreSort('recent')">Recent</button>
+      <button class="seg-btn${exploreSort==='trending'?' active':''}" onclick="setExploreSort('trending')">🔥 Trending</button>
+    </div>
+    <div class="seg">
+      <button class="seg-btn${exploreLayout==='grid'?' active':''}" onclick="setExploreLayout('grid')" aria-label="Grid view">▦</button>
+      <button class="seg-btn${exploreLayout==='feed'?' active':''}" onclick="setExploreLayout('feed')" aria-label="Feed view">☰</button>
+    </div>
+  </div>`;
 
-  feed.innerHTML = chipsHtml + '<div class="photo-grid"></div>';
-  const grid = feed.querySelector('.photo-grid');
+  let filtered = exploreLocationFilter
+    ? exploreAllPosts.filter(p => (p.location === exploreLocationFilter) || (p.country === exploreLocationFilter))
+    : exploreAllPosts.slice();
+
+  if(exploreSort === 'trending'){
+    filtered.sort((a,b) => (likeCounts[b.id]||0) - (likeCounts[a.id]||0));
+  }
+
+  const layoutClass = exploreLayout === 'feed' ? 'photo-feed' : 'photo-grid';
+  feed.innerHTML = chipsHtml + toolbarHtml + `<div class="${layoutClass}"></div>`;
+  const grid = feed.querySelector('.' + layoutClass);
   if(!filtered.length){
-    grid.outerHTML = '<div class="empty-feed">No photos from here yet.</div>';
+    grid.outerHTML = '<div class="empty-feed">No posts from here yet.</div>';
     return;
+  }
+  if(exploreSort === 'trending' && !filtered.some(p => (likeCounts[p.id]||0) > 0)){
+    grid.insertAdjacentHTML('beforebegin', '<div class="empty-feed" style="padding:20px;">No likes yet to rank by — showing everything.</div>');
   }
   filtered.forEach(p => grid.appendChild(photoCardEl(p)));
 }
-function setExploreFilter(place){
-  exploreLocationFilter = place;
-  renderExploreFeed();
-}
+function setExploreFilter(place){ exploreLocationFilter = place; renderExploreFeed(); }
+function setExploreSort(sort){ exploreSort = sort; renderExploreFeed(); }
+function setExploreLayout(layout){ exploreLayout = layout; renderExploreFeed(); }
+
 function photoCardEl(p){
   const name = p.profiles ? p.profiles.name : 'Someone';
   const handle = p.profiles ? p.profiles.handle : 'unknown';
   const div = document.createElement('div');
   div.className = 'photo-card';
+  div.dataset.postId = p.id;
   const placeLine = [p.location, p.country].filter(Boolean).join(', ');
   const placeKey = p.location || p.country || '';
+  const isVideo = p.media_type === 'video';
+  const mediaHtml = isVideo
+    ? `<video src="${p.image_url}" class="photo-card-img" controls preload="metadata"></video>`
+    : `<img src="${p.image_url}" alt="" loading="lazy" class="photo-card-img">`;
+  const liked = likedByMe.has(p.id);
+  const saved = savedByMe.has(p.id);
+  const count = likeCounts[p.id] || 0;
   div.innerHTML = `
-    <img src="${p.image_url}" alt="" loading="lazy" class="photo-card-img">
+    ${mediaHtml}
     <div class="photo-card-body">
       ${placeLine ? `<div class="photo-card-place" data-place="${esc(placeKey)}">📍 ${esc(placeLine)}</div>` : ''}
       ${p.caption ? `<div class="photo-card-caption"></div>` : ''}
+      <div class="photo-card-actions">
+        <button class="pcard-action${liked?' liked':''}" data-act="like">${liked ? '❤️' : '🤍'} <span class="pcard-count">${count > 0 ? count : ''}</span></button>
+        <button class="pcard-action" data-act="share">🔁</button>
+        <button class="pcard-action${saved?' saved':''}" data-act="save">${saved ? '🔖' : '📑'}</button>
+      </div>
       <div class="photo-card-meta">
         <div class="avatar" style="width:22px;height:22px;font-size:9px;background:${colorFor(handle)}">${initials(name)}</div>
         <span>@${esc(handle)}</span>
@@ -846,7 +921,59 @@ function photoCardEl(p){
   if(p.caption) div.querySelector('.photo-card-caption').textContent = p.caption;
   const placeEl = div.querySelector('.photo-card-place');
   if(placeEl) placeEl.addEventListener('click', ()=> setExploreFilter(placeKey));
+  div.querySelector('[data-act="like"]').addEventListener('click', ()=> togglePostLike(p.id, div));
+  div.querySelector('[data-act="save"]').addEventListener('click', ()=> togglePostSave(p.id, div));
+  div.querySelector('[data-act="share"]').addEventListener('click', ()=> sharePost(p));
   return div;
+}
+
+/* ---------- Real post interactions: like, save, share ---------- */
+async function togglePostLike(postId, cardEl){
+  const btn = cardEl.querySelector('[data-act="like"]');
+  const wasLiked = likedByMe.has(postId);
+  try{
+    if(wasLiked){
+      await sbClient.from('post_likes').delete().eq('post_id', postId).eq('user_id', session.user.id);
+      likedByMe.delete(postId);
+      likeCounts[postId] = Math.max(0, (likeCounts[postId]||1) - 1);
+    }else{
+      await sbClient.from('post_likes').insert({ post_id: postId, user_id: session.user.id });
+      likedByMe.add(postId);
+      likeCounts[postId] = (likeCounts[postId]||0) + 1;
+    }
+    const n = likeCounts[postId];
+    btn.innerHTML = `${likedByMe.has(postId) ? '❤️' : '🤍'} <span class="pcard-count">${n > 0 ? n : ''}</span>`;
+    btn.classList.toggle('liked', likedByMe.has(postId));
+  }catch(e){
+    toast('Could not update like. Try again.', 'err');
+  }
+}
+async function togglePostSave(postId, cardEl){
+  const btn = cardEl.querySelector('[data-act="save"]');
+  const wasSaved = savedByMe.has(postId);
+  try{
+    if(wasSaved){
+      await sbClient.from('saved_posts').delete().eq('post_id', postId).eq('user_id', session.user.id);
+      savedByMe.delete(postId);
+    }else{
+      await sbClient.from('saved_posts').insert({ post_id: postId, user_id: session.user.id });
+      savedByMe.add(postId);
+    }
+    btn.textContent = savedByMe.has(postId) ? '🔖' : '📑';
+    btn.classList.toggle('saved', savedByMe.has(postId));
+    toast(savedByMe.has(postId) ? 'Saved.' : 'Removed from saved.', 'ok');
+  }catch(e){
+    toast('Could not update. Try again.', 'err');
+  }
+}
+async function sharePost(p){
+  const text = [p.caption, p.image_url].filter(Boolean).join('\n');
+  try{
+    await navigator.clipboard.writeText(text);
+    toast('Link copied to clipboard.', 'ok');
+  }catch(e){
+    toast('Could not copy — long-press the image to save/share instead.', 'err');
+  }
 }
 function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 
