@@ -241,7 +241,21 @@
   .subpage.active{ display:block; animation:fadeIn var(--dur-base) var(--ease); }
   .subpage h2{ font-family:'Fraunces',serif; font-size:var(--fs-2xl); margin-bottom:var(--sp-1); }
   .subpage .subhead{ color:var(--text-muted); font-size:var(--fs-sm); margin-bottom:var(--sp-6); }
-  .settings-row{ display:flex; align-items:center; justify-content:space-between; padding:var(--sp-4) 0; border-bottom:1px solid var(--border); }
+  .profile-avatar-lg{ width:88px; height:88px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:var(--fs-2xl); color:#fff; box-shadow:0 0 0 4px var(--surface); flex-shrink:0; }
+  .profile-cover{ height:120px; margin:calc(-1 * var(--sp-6)) calc(-1 * var(--sp-5)) 0; position:relative; }
+  .profile-settings-btn{ position:absolute; top:var(--sp-4); right:var(--sp-4); background:rgba(0,0,0,0.35); border-color:transparent; backdrop-filter:blur(6px); }
+  .profile-header{ display:flex; align-items:flex-end; gap:var(--sp-4); margin-top:-40px; padding:0 2px var(--sp-4); }
+  .profile-header-info{ padding-bottom:8px; min-width:0; }
+  .profile-name-lg{ font-family:'Fraunces',serif; font-weight:600; font-size:var(--fs-xl); }
+  .profile-handle-lg{ font-size:var(--fs-sm); color:var(--text-faint); font-family:'JetBrains Mono',monospace; }
+  .profile-joined{ font-size:var(--fs-2xs); color:var(--text-faint); margin-top:2px; }
+  .profile-edit-toggle{ margin-bottom:var(--sp-4); }
+  .profile-bio-text{ font-size:var(--fs-sm); color:var(--text); line-height:1.5; margin-bottom:var(--sp-4); max-width:480px; }
+  .profile-tabs{ display:flex; gap:8px; border-bottom:1px solid var(--border); padding-bottom:var(--sp-3); flex-wrap:wrap; }
+  .settings-group{ margin-bottom:var(--sp-5); }
+  .settings-group-title{ font-size:var(--fs-xs); font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--text-faint); margin-bottom:var(--sp-2); padding:0 2px; }
+  .settings-row-icon{ font-size:var(--fs-lg); width:28px; text-align:center; flex-shrink:0; }
+  .settings-row{ display:flex; align-items:center; justify-content:space-between; padding:var(--sp-4) 0; border-bottom:1px solid var(--border); gap:12px; }
   .settings-row:last-child{ border-bottom:none; }
   .settings-row-label{ font-size:var(--fs-base); font-weight:500; }
   .settings-row-desc{ font-size:var(--fs-xs); color:var(--text-faint); margin-top:2px; }
@@ -249,7 +263,6 @@
   .switch.on{ background:var(--accent); }
   .switch::after{ content:''; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--surface); box-shadow:var(--shadow-sm); transition:transform var(--dur-base) var(--ease-spring); }
   .switch.on::after{ transform:translateX(18px); background:var(--accent-ink); }
-  .profile-avatar-lg{ width:72px; height:72px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:var(--fs-2xl); color:var(--accent-ink); margin-bottom:var(--sp-4); }
 
   /* ============ TOASTS ============ */
   #toast-region{ position:fixed; bottom:var(--sp-5); left:50%; transform:translateX(-50%); display:flex; flex-direction:column; gap:var(--sp-2); z-index:var(--z-toast); align-items:center; pointer-events:none; }
@@ -429,54 +442,111 @@
 
     <!-- PROFILE VIEW -->
     <div class="center subpage" id="view-profile" style="border-right:1px solid var(--border);">
-      <div style="display:flex; align-items:center; justify-content:space-between;">
-        <h2 class="display">Profile</h2>
-        <button class="theme-toggle" onclick="setView('settings')" aria-label="Open settings" title="Settings">⚙</button>
+      <div class="profile-cover" id="profileCover">
+        <button class="theme-toggle profile-settings-btn" onclick="setView('settings')" aria-label="Open settings" title="Settings">⚙</button>
       </div>
-      <div class="subhead">How you appear to everyone in Lapse.</div>
-      <div class="profile-avatar-lg" id="profileAvatarLg">?</div>
+      <div class="profile-header">
+        <div class="profile-avatar-lg" id="profileAvatarLg">?</div>
+        <div class="profile-header-info">
+          <div class="profile-name-lg" id="profileNameLg">—</div>
+          <div class="profile-handle-lg" id="profileHandleLg">—</div>
+          <div class="profile-joined" id="profileJoined"></div>
+        </div>
+      </div>
       <div class="profile-stats" id="profileStats"></div>
-      <div class="field-group"><label for="pfName">Name</label><input class="field field-plain" id="pfName" style="max-width:340px;"></div>
-      <div class="field-group"><label for="pfHandle">Handle</label><input class="field field-plain" id="pfHandle" style="max-width:340px;"></div>
-      <div class="field-group"><label for="pfBio">Bio</label><textarea class="field field-plain" id="pfBio" rows="2" style="max-width:340px; resize:vertical;" placeholder="A line about you..." maxlength="140"></textarea></div>
-      <div class="field-group"><label for="pfCurrentLocation">Currently traveling in (optional)</label><input class="field field-plain" id="pfCurrentLocation" style="max-width:340px;" placeholder="e.g. Pokhara, Nepal — leave blank if not traveling"></div>
-      <div class="field-group">
-        <label for="pfCountry">Country</label>
-        <select id="pfCountry" class="field field-plain" style="max-width:340px; margin-bottom:0;">
-          <option value="India">India</option>
-          <option value="Nepal">Nepal</option>
-          <option value="Philippines">Philippines</option>
-          <option value="Indonesia">Indonesia</option>
-          <option value="Pakistan">Pakistan</option>
-          <option value="Bangladesh">Bangladesh</option>
-          <option value="Sri Lanka">Sri Lanka</option>
-          <option value="Vietnam">Vietnam</option>
-          <option value="Thailand">Thailand</option>
-          <option value="World">Elsewhere</option>
-        </select>
+
+      <div class="profile-edit-toggle">
+        <button class="btn btn-secondary" style="padding:8px 18px;" onclick="toggleEditProfile()" id="editProfileBtn">Edit profile</button>
       </div>
-      <div class="auth-msg" id="profileMsg" role="alert" style="max-width:340px;"></div>
-      <button class="btn btn-primary" style="padding:10px 24px;" onclick="saveProfile()">Save changes</button>
+
+      <div id="profileEditForm" class="hidden">
+        <div class="field-group"><label for="pfName">Name</label><input class="field field-plain" id="pfName" style="max-width:340px;"></div>
+        <div class="field-group"><label for="pfHandle">Handle</label><input class="field field-plain" id="pfHandle" style="max-width:340px;"></div>
+        <div class="field-group"><label for="pfBio">Bio</label><textarea class="field field-plain" id="pfBio" rows="2" style="max-width:340px; resize:vertical;" placeholder="A line about you..." maxlength="140"></textarea></div>
+        <div class="field-group"><label for="pfCurrentLocation">Currently traveling in (optional)</label><input class="field field-plain" id="pfCurrentLocation" style="max-width:340px;" placeholder="e.g. Pokhara, Nepal — leave blank if not traveling"></div>
+        <div class="field-group">
+          <label for="pfCountry">Country</label>
+          <select id="pfCountry" class="field field-plain" style="max-width:340px; margin-bottom:0;">
+            <option value="India">India</option>
+            <option value="Nepal">Nepal</option>
+            <option value="Philippines">Philippines</option>
+            <option value="Indonesia">Indonesia</option>
+            <option value="Pakistan">Pakistan</option>
+            <option value="Bangladesh">Bangladesh</option>
+            <option value="Sri Lanka">Sri Lanka</option>
+            <option value="Vietnam">Vietnam</option>
+            <option value="Thailand">Thailand</option>
+            <option value="World">Elsewhere</option>
+          </select>
+        </div>
+        <div class="auth-msg" id="profileMsg" role="alert" style="max-width:340px;"></div>
+        <button class="btn btn-primary" style="padding:10px 24px;" onclick="saveProfile()">Save changes</button>
+      </div>
+
+      <div id="profileBioDisplay">
+        <div class="profile-bio-text" id="profileBioText"></div>
+      </div>
+
+      <div class="profile-tabs">
+        <button class="seg-btn profile-tab active" data-tab="posts" onclick="setProfileTab('posts')">My Posts</button>
+        <button class="seg-btn profile-tab" data-tab="saved" onclick="setProfileTab('saved')">🔖 Saved</button>
+        <button class="seg-btn profile-tab" data-tab="liked" onclick="setProfileTab('liked')">❤️ Liked</button>
+      </div>
+      <div class="photo-grid" id="profilePostsGrid" style="padding-top:var(--sp-3);"></div>
     </div>
 
     <!-- SETTINGS VIEW — reached via the gear icon on Profile -->
     <div class="center subpage" id="view-settings" style="border-right:1px solid var(--border);">
       <button class="btn-ghost back-link" onclick="setView('profile')">← Profile</button>
       <h2 class="display">Settings</h2>
-      <div class="subhead">Appearance, account, and session.</div>
-      <div class="panel" style="margin-bottom:var(--sp-4);">
-        <div class="settings-row">
-          <div><div class="settings-row-label">Dark mode</div><div class="settings-row-desc">Lapse defaults to dark — switch to light anytime.</div></div>
-          <button class="switch on" id="darkSwitch" role="switch" aria-checked="true" aria-label="Toggle dark mode" onclick="toggleTheme()"></button>
+      <div class="subhead">Appearance, account, and privacy.</div>
+      <input type="text" id="settingsSearch" class="field field-plain" placeholder="Search settings..." style="margin-bottom:var(--sp-4);" oninput="filterSettings()">
+
+      <div class="settings-group" data-label="account appearance email password log out">
+        <div class="settings-group-title">Account</div>
+        <div class="panel">
+          <div class="settings-row">
+            <div class="settings-row-icon">✉️</div>
+            <div><div class="settings-row-label">Signed in as</div><div class="settings-row-desc" id="settingsEmail">—</div></div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-icon">🚪</div>
+            <div><div class="settings-row-label">Log out</div><div class="settings-row-desc">You'll need your password to sign back in.</div></div>
+            <button class="btn btn-secondary" style="padding:8px 18px; margin-left:auto;" onclick="logOut()">Log out</button>
+          </div>
         </div>
       </div>
-      <div class="panel">
-        <div class="settings-row">
-          <div><div class="settings-row-label">Signed in as</div><div class="settings-row-desc" id="settingsEmail">—</div></div>
+
+      <div class="settings-group" data-label="appearance dark mode light mode theme">
+        <div class="settings-group-title">Appearance</div>
+        <div class="panel">
+          <div class="settings-row">
+            <div class="settings-row-icon">🌓</div>
+            <div><div class="settings-row-label">Dark mode</div><div class="settings-row-desc">Lapse defaults to dark — switch to light anytime.</div></div>
+            <button class="switch on" id="darkSwitch" role="switch" aria-checked="true" aria-label="Toggle dark mode" onclick="toggleTheme()" style="margin-left:auto;"></button>
+          </div>
         </div>
-        <div class="settings-row">
-          <div><div class="settings-row-label">Log out</div><div class="settings-row-desc">You'll need your password to sign back in.</div></div>
-          <button class="btn btn-secondary" style="padding:8px 18px;" onclick="logOut()">Log out</button>
+      </div>
+
+      <div class="settings-group" data-label="privacy safety blocked users">
+        <div class="settings-group-title">Privacy &amp; Safety</div>
+        <div class="panel">
+          <div class="settings-row">
+            <div class="settings-row-icon">🚫</div>
+            <div style="flex:1;"><div class="settings-row-label">Blocked users</div><div class="settings-row-desc">People you've blocked won't be able to reach you.</div></div>
+          </div>
+          <div id="blockedUsersList"></div>
+        </div>
+      </div>
+
+      <div class="settings-group" data-label="notifications language accessibility storage devices security about help terms">
+        <div class="settings-group-title">More</div>
+        <div class="panel">
+          <div class="settings-row"><div class="settings-row-icon">🔔</div><div><div class="settings-row-label">Notifications</div><div class="settings-row-desc">Coming soon.</div></div></div>
+          <div class="settings-row"><div class="settings-row-icon">🌐</div><div><div class="settings-row-label">Language</div><div class="settings-row-desc">Coming soon.</div></div></div>
+          <div class="settings-row"><div class="settings-row-icon">♿</div><div><div class="settings-row-label">Accessibility</div><div class="settings-row-desc">Coming soon.</div></div></div>
+          <div class="settings-row"><div class="settings-row-icon">🔒</div><div><div class="settings-row-label">Security &amp; devices</div><div class="settings-row-desc">Coming soon.</div></div></div>
+          <div class="settings-row"><div class="settings-row-icon">ℹ️</div><div><div class="settings-row-label">About &amp; Help</div><div class="settings-row-desc">Lapse — built with real data, always.</div></div></div>
         </div>
       </div>
     </div>
@@ -734,7 +804,7 @@ function setView(view){
     el.classList.toggle('active', el.dataset.view === view);
   });
   if(view === 'profile') fillProfileForm();
-  if(view === 'settings') document.getElementById('settingsEmail').textContent = session?.user?.email || '—';
+  if(view === 'settings'){ document.getElementById('settingsEmail').textContent = session?.user?.email || '—'; loadBlockedUsersList(); }
   if(view === 'messages') loadConversations();
   if(view === 'explore') loadExploreFeed();
   if(view === 'activity') loadActivityFeed();
@@ -1310,21 +1380,87 @@ function fillProfileForm(){
   document.getElementById('pfHandle').value = profile.handle;
   document.getElementById('pfBio').value = profile.bio || '';
   document.getElementById('pfCurrentLocation').value = profile.current_location || '';
+  document.getElementById('pfCountry').value = profile.country || 'World';
+
   document.getElementById('profileAvatarLg').textContent = initials(profile.name);
   document.getElementById('profileAvatarLg').style.background = colorFor(profile.handle);
-  document.getElementById('pfCountry').value = profile.country || 'World';
+  document.getElementById('profileCover').style.background = colorFor(profile.handle + profile.handle); // distinct gradient from avatar
+  document.getElementById('profileNameLg').textContent = profile.name;
+  document.getElementById('profileHandleLg').textContent = '@' + profile.handle;
+  const joined = session?.user?.created_at ? new Date(session.user.created_at).toLocaleDateString([], { month:'long', year:'numeric' }) : '';
+  document.getElementById('profileJoined').textContent = joined ? 'Joined ' + joined : '';
+  document.getElementById('profileBioText').textContent = profile.bio || '';
+
+  document.getElementById('profileEditForm').classList.add('hidden');
+  document.getElementById('editProfileBtn').textContent = 'Edit profile';
+
   loadProfileStats();
+  setProfileTab('posts');
+}
+function toggleEditProfile(){
+  const form = document.getElementById('profileEditForm');
+  const isHidden = form.classList.contains('hidden');
+  form.classList.toggle('hidden', !isHidden);
+  document.getElementById('editProfileBtn').textContent = isHidden ? 'Cancel' : 'Edit profile';
 }
 async function loadProfileStats(){
   const el = document.getElementById('profileStats');
   el.innerHTML = '<span class="stat-skel"></span>';
   try{
-    const { count, error } = await sbClient.from('posts').select('id', { count: 'exact', head: true }).eq('user_id', session.user.id);
-    if(error) throw error;
-    const locationBadge = profile.current_location ? `<div class="stat"><b>📍</b><span>${esc(profile.current_location)}</span></div>` : '';
-    el.innerHTML = `<div class="stat"><b>${count ?? 0}</b><span>photos</span></div>${locationBadge}`;
+    const [{ count: postCount }, { count: likedCount }, { count: savedCount }] = await Promise.all([
+      sbClient.from('posts').select('id', { count:'exact', head:true }).eq('user_id', session.user.id),
+      sbClient.from('post_likes').select('post_id', { count:'exact', head:true }).eq('user_id', session.user.id),
+      sbClient.from('saved_posts').select('post_id', { count:'exact', head:true }).eq('user_id', session.user.id),
+    ]);
+    el.innerHTML = `
+      <div class="stat"><b>${postCount ?? 0}</b><span>posts</span></div>
+      <div class="stat"><b>${likedCount ?? 0}</b><span>liked</span></div>
+      <div class="stat"><b>${savedCount ?? 0}</b><span>saved</span></div>
+      ${profile.current_location ? `<div class="stat"><b>📍</b><span>${esc(profile.current_location)}</span></div>` : ''}`;
   }catch(e){
     el.innerHTML = '';
+  }
+}
+let profileTab = 'posts';
+async function setProfileTab(tab){
+  profileTab = tab;
+  document.querySelectorAll('.profile-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  const grid = document.getElementById('profilePostsGrid');
+  grid.innerHTML = '<div class="photo-card-skel skel"></div><div class="photo-card-skel skel"></div>';
+  try{
+    let posts = [];
+    if(tab === 'posts'){
+      const { data, error } = await sbClient.from('posts').select('id, caption, location, country, image_url, media_type, created_at, user_id, profiles ( name, handle )').eq('user_id', session.user.id).order('created_at', { ascending:false });
+      if(error) throw error;
+      posts = data || [];
+    }else if(tab === 'saved'){
+      const { data: saves, error } = await sbClient.from('saved_posts').select('post_id').eq('user_id', session.user.id).order('created_at', { ascending:false });
+      if(error) throw error;
+      const ids = (saves||[]).map(s=>s.post_id);
+      if(ids.length){
+        const { data } = await sbClient.from('posts').select('id, caption, location, country, image_url, media_type, created_at, user_id, profiles ( name, handle )').in('id', ids);
+        posts = ids.map(id => (data||[]).find(p=>p.id===id)).filter(Boolean); // preserve save order
+      }
+    }else if(tab === 'liked'){
+      const { data: likes, error } = await sbClient.from('post_likes').select('post_id').eq('user_id', session.user.id).order('created_at', { ascending:false });
+      if(error) throw error;
+      const ids = (likes||[]).map(l=>l.post_id);
+      if(ids.length){
+        const { data } = await sbClient.from('posts').select('id, caption, location, country, image_url, media_type, created_at, user_id, profiles ( name, handle )').in('id', ids);
+        posts = ids.map(id => (data||[]).find(p=>p.id===id)).filter(Boolean);
+      }
+    }
+    posts = posts.filter(p => !blockedIds.has(p.user_id));
+    if(!posts.length){
+      const emptyMsg = tab === 'posts' ? "You haven't posted anything yet." : tab === 'saved' ? "Nothing saved yet." : "You haven't liked anything yet.";
+      grid.outerHTML = `<div class="empty-feed">${emptyMsg}</div>`;
+      return;
+    }
+    await loadLikeAndSaveState(posts.map(p=>p.id));
+    grid.innerHTML = '';
+    posts.forEach(p => grid.appendChild(photoCardEl(p)));
+  }catch(e){
+    grid.outerHTML = '<div class="empty-feed">Could not load. Check your connection.</div>';
   }
 }
 async function saveProfile(){
@@ -1341,10 +1477,45 @@ async function saveProfile(){
     if(error){ msg.className='auth-msg err'; msg.textContent = error.message.includes('duplicate') ? 'That handle is taken.' : error.message; return; }
     profile = { ...profile, name, handle, country, bio, current_location };
     renderNav();
-    loadProfileStats();
+    fillProfileForm();
+    toggleEditProfile();
     toast('Profile updated.', 'ok');
   }catch(e){
     msg.className='auth-msg err'; msg.textContent = 'Could not save. Check your connection.';
+  }
+}
+
+/* ---------- Settings: search + real blocked-users management ---------- */
+function filterSettings(){
+  const q = document.getElementById('settingsSearch').value.trim().toLowerCase();
+  document.querySelectorAll('.settings-group').forEach(group=>{
+    const match = !q || (group.dataset.label || '').includes(q);
+    group.classList.toggle('hidden', !match);
+  });
+}
+async function loadBlockedUsersList(){
+  const el = document.getElementById('blockedUsersList');
+  if(!blockedIds.size){ el.innerHTML = '<div class="settings-row-desc" style="padding:8px 0 4px;">No one blocked.</div>'; return; }
+  try{
+    const { data } = await sbClient.from('profiles').select('id, name, handle').in('id', [...blockedIds]);
+    el.innerHTML = (data||[]).map(p => `
+      <div class="settings-row" style="padding-left:0;">
+        <div class="avatar" style="width:28px;height:28px;font-size:11px;background:${colorFor(p.handle)}">${initials(p.name)}</div>
+        <div style="flex:1;">@${esc(p.handle)}</div>
+        <button class="btn btn-secondary" style="padding:6px 14px; font-size:var(--fs-2xs);" onclick="unblockUser('${p.id}')">Unblock</button>
+      </div>`).join('');
+  }catch(e){
+    el.innerHTML = '';
+  }
+}
+async function unblockUser(userId){
+  try{
+    await sbClient.from('blocks').delete().eq('blocker_id', session.user.id).eq('blocked_id', userId);
+    blockedIds.delete(userId);
+    loadBlockedUsersList();
+    toast('Unblocked.', 'ok');
+  }catch(e){
+    toast('Could not unblock. Try again.', 'err');
   }
 }
 
